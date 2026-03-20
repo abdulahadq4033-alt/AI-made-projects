@@ -29,38 +29,6 @@ Automation Scripts ⚙️
 
 AI-assisted development tools 🤖
 
-📂 Projects Included
-1. 📁 File Organizer
-
-An automation script that:
-
-Sorts files into folders based on file type
-
-Helps keep directories clean and structured
-
-2. 🔗 Data Structures Implementations
-
-Includes:
-
-Linked Lists (Singly, Doubly, Circular)
-
-Stacks & Queues
-
-Trees (AVL, Binary Trees)
-
-3. ⚡ Algorithm Implementations
-
-Sorting algorithms
-
-Searching techniques
-
-Tree operations (insertion, deletion, traversal)
-
-4. 🧪 Experimental AI Projects
-
-Small scripts generated using AI prompts
-
-Concept-based implementations
 
 🚀 How to Use
 
