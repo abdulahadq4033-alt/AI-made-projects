@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rashid Moon Mission — UAE's Lunar Frontier</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div id="tooltip"></div>
+
+<header>
+  <div class="logo">Rashid <span>/ Moon Mission</span></div>
+  <nav>
+    <a href="#hero">Mission</a>
+    <a href="#rover-section">Rover</a>
+    <a href="#timeline">Timeline</a>
+  </nav>
+</header>
+
+<section id="hero">
+  <div class="hero-text">
+    <div class="mission-tag">UAE Space Agency · 2022</div>
+    <h1>First Arab <em>Lunar Mission</em></h1>
+    <p class="hero-desc">
+      The Emirates Lunar Mission, carrying the Rashid Rover, marked a historic milestone — the Arab world's first attempt to land on the Moon, aboard the ispace Hakuto-R lander.
+    </p>
+    <button class="btn-primary" onclick="document.getElementById('rover-section').scrollIntoView({behavior:'smooth'})">Explore Rover →</button>
+  </div>
+
+  <div id="moon-container">
+    <div class="moon-glow"></div>
+    <canvas id="moon-canvas" width="520" height="520"></canvas>
+    <div class="moon-hint">← drag to rotate · hover craters for info →</div>
+  </div>
+</section>
+
+<div id="stats">
+  <div class="stat">
+    <span class="stat-val">10kg</span>
+    <span class="stat-label">Rover Mass</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val">50cm</span>
+    <span class="stat-label">Roving Height</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val">14</span>
+    <span class="stat-label">Earth Days Ops</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val">4</span>
+    <span class="stat-label">Cameras Onboard</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val">2022</span>
+    <span class="stat-label">Launch Year</span>
+  </div>
+</div>
+
+<section id="rover-section">
+  <div>
+    <div class="section-tag">The Rashid Rover</div>
+    <h2>Built in <span style="color:var(--gold)">the UAE</span></h2>
+    <p class="rover-desc">
+      Rashid Rover was developed by the Mohammed Bin Rashid Space Centre (MBRSC). Weighing just 10 kg, it was equipped with four cameras, a microscopic imager, a Langmuir probe, and a thermal imaging camera to study the lunar surface and plasma environment.
+    </p>
+    <div class="specs">
+      <div class="spec-item">
+        <div class="spec-key">Mass</div>
+        <div class="spec-val">10 kg</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-key">Dimensions</div>
+        <div class="spec-val">50 × 50 × 70 cm</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-key">Landing Site</div>
+        <div class="spec-val">Atlas Crater, Mare Frigoris</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-key">Instruments</div>
+        <div class="spec-val">4 Cameras + Langmuir Probe</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-key">Developer</div>
+        <div class="spec-val">MBRSC, Dubai</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-key">Launch Vehicle</div>
+        <div class="spec-val">SpaceX Falcon 9</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <canvas id="rover-canvas"></canvas>
+  </div>
+</section>
+
+<section id="timeline">
+  <div class="section-tag" style="justify-content:center; margin-bottom:1rem;">Mission Log</div>
+  <h2>Mission <span style="color:var(--gold)">Timeline</span></h2>
+  <div class="timeline-line" id="tl">
+    <div class="tl-item">
+      <div class="tl-date">September 2017</div>
+      <div class="tl-title">Mission Announced</div>
+      <div class="tl-text">UAE announces its first lunar mission at the International Astronautical Congress, aiming to land a rover on the Moon.</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2019–2021</div>
+      <div class="tl-title">Rover Development</div>
+      <div class="tl-text">MBRSC engineers design, build, and test the Rashid Rover entirely in the UAE, with international science partnerships.</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">December 11, 2022</div>
+      <div class="tl-title">Launch</div>
+      <div class="tl-text">Rashid Rover launches aboard the ispace Hakuto-R Mission 1 lander on a SpaceX Falcon 9 from Cape Canaveral.</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">April 25, 2023</div>
+      <div class="tl-title">Landing Attempt</div>
+      <div class="tl-text">The Hakuto-R lander attempts touchdown at Atlas Crater, Mare Frigoris. Contact is lost during final descent — a hard landing occurs.</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">Post-Mission</div>
+      <div class="tl-title">Legacy & Future</div>
+      <div class="tl-text">Despite the outcome, UAE space officials declare the mission a success for learning. Mission 2 is planned with upgraded systems and greater autonomy.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Mohammed Bin Rashid Space Centre · <span>United Arab Emirates</span> · Lunar Exploration Programme</p>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

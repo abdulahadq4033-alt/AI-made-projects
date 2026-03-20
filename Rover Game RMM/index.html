@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RASHID ROVER — Lunar Mission Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #D4A017;
+    --gold-bright: #FFD04A;
+    --deep: #03070F;
+    --panel: #080F1E;
+    --border: rgba(212,160,23,0.35);
+    --lunar: #A8B0C0;
+    --red: #E8402A;
+    --green: #3AE870;
+    --blue: #3A90E8;
+    --white: #EDF0F8;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--deep);
+    color: var(--white);
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+  }
+
+  /* ── SCREENS ── */
+  .screen { position:absolute; inset:0; display:none; }
+  .screen.active { display:flex; }
+
+  /* ══════════════════════════════
+     START SCREEN
+  ══════════════════════════════ */
+  #start-screen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 40%, #0A1428 0%, #03070F 70%);
+  }
+
+  #start-canvas {
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+  }
+
+  .start-inner {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .uae-badge {
+    font-size: 0.6rem;
+    letter-spacing: 0.5em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .uae-badge::before, .uae-badge::after {
+    content:'';
+    width: 40px; height: 1px;
+    background: var(--gold);
+  }
+
+  .game-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+  }
+
+  .game-title .line1 { color: var(--gold-bright); display: block; }
+  .game-title .line2 { color: var(--white); display: block; font-size: 0.45em; letter-spacing: 0.3em; margin-top: 0.3em; }
+
+  .game-subtitle {
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    color: var(--lunar);
+    margin: 1.5rem 0 2.5rem;
+    text-transform: uppercase;
+  }
+
+  .controls-hint {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .ctrl {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.7rem;
+    color: var(--lunar);
+  }
+
+  .key {
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 0.2rem 0.5rem;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    min-width: 2rem;
+    text-align: center;
+  }
+
+  .btn-start {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    padding: 1rem 3.5rem;
+    background: transparent;
+    border: 2px solid var(--gold);
+    color: var(--gold-bright);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+  }
+
+  .btn-start::before {
+    content:'';
+    position:absolute;
+    inset:0;
+    background: var(--gold);
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+    z-index: -1;
+  }
+
+  .btn-start:hover { color: var(--deep); }
+  .btn-start:hover::before { transform: translateX(0); }
+
+  .btn-start.pulse {
+    animation: btn-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes btn-pulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(212,160,23,0.4); }
+    50% { box-shadow: 0 0 30px rgba(212,160,23,0.8), 0 0 60px rgba(212,160,23,0.3); }
+  }
+
+  .high-score-display {
+    margin-top: 1.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--lunar);
+  }
+  .high-score-display span { color: var(--gold-bright); }
+
+  /* ══════════════════════════════
+     GAME SCREEN
+  ══════════════════════════════ */
+  #game-screen {
+    flex-direction: column;
+  }
+
+  /* HUD */
+  #hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(180deg, rgba(3,7,15,0.95) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hud-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 120px;
+  }
+
+  .hud-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .hud-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .hud-center {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    color: var(--gold-bright);
+    text-align: center;
+  }
+
+  /* Battery bar */
+  .battery-bar {
+    width: 120px;
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .battery-fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.3s, background 0.3s;
+    width: 100%;
+  }
+
+  /* Lives */
+  .lives {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .life-icon {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 6px var(--gold);
+  }
+
+  .life-icon.lost {
+    background: transparent;
+    border: 1px solid var(--border);
+    box-shadow: none;
+  }
+
+  /* GAME CANVAS */
+  #game-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Message overlay */
+  #msg-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 15;
+  }
+
+  #msg-box {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.2rem, 3vw, 2rem);
+    font-weight: 700;
+    color: var(--gold-bright);
+    text-shadow: 0 0 20px var(--gold), 0 0 40px rgba(212,160,23,0.5);
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s;
+    letter-spacing: 0.1em;
+  }
+
+  #msg-box.show {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Mobile controls */
+  #mobile-controls {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    gap: 1rem;
+    z-index: 20;
+  }
+
+  @media (pointer: coarse) {
+    #mobile-controls { display: flex; }
+  }
+
+  .mob-btn {
+    width: 60px; height: 60px;
+    border: 2px solid var(--gold);
+    background: rgba(212,160,23,0.15);
+    color: var(--gold-bright);
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    active-color: var(--gold);
+    transition: background 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mob-btn:active { background: rgba(212,160,23,0.4); }
+
+  /* ══════════════════════════════
+     GAME OVER / WIN SCREEN
+  ══════════════════════════════ */
+  #over-screen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 50%, #0A1020 0%, #03070F 80%);
+  }
+
+  .over-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 6vw, 4rem);
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.1em;
+  }
+
+  .over-sub {
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    color: var(--lunar);
+    margin-bottom: 2.5rem;
+    text-transform: uppercase;
+    text-align: center;
+    max-width: 400px;
+    line-height: 2;
+  }
+
+  .score-table {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 3rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .score-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .score-row .lbl {
+    font-size: 0.58rem;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .score-row .val {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .btn-secondary {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    padding: 0.7rem 2rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--lunar);
+    cursor: pointer;
+    transition: all 0.3s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  .btn-secondary:hover { border-color: var(--gold); color: var(--gold-bright); }
+
+  /* scanlines */
+  body::after {
+    content:'';
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
+    z-index: 999;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ START SCREEN ══ -->
+<div id="start-screen" class="screen active">
+  <canvas id="start-canvas"></canvas>
+  <div class="start-inner">
+    <div class="uae-badge">Mohammed Bin Rashid Space Centre</div>
+    <div class="game-title">
+      <span class="line1">RASHID</span>
+      <span class="line2">ROVER MISSION</span>
+    </div>
+    <p class="game-subtitle">Navigate the lunar surface · Collect data · Survive</p>
+
+    <div class="controls-hint">
+      <div class="ctrl"><span class="key">←</span><span class="key">→</span> Move</div>
+      <div class="ctrl"><span class="key">↑</span><span class="key">SPACE</span> Jump</div>
+      <div class="ctrl"><span class="key">↓</span> Brake / Shield</div>
+    </div>
+
+    <button class="btn-start pulse" id="startBtn">LAUNCH MISSION</button>
+    <div class="high-score-display">BEST SCORE: <span id="hs-display">0</span></div>
+  </div>
+</div>
+
+<!-- ══ GAME SCREEN ══ -->
+<div id="game-screen" class="screen">
+  <div id="hud">
+    <div class="hud-block">
+      <span class="hud-label">Score</span>
+      <span class="hud-val" id="score-display">0</span>
+    </div>
+    <div class="hud-block" style="align-items:center">
+      <span class="hud-label" style="text-align:center">Distance (m)</span>
+      <span class="hud-val" id="dist-display">0</span>
+    </div>
+    <div class="hud-center" id="hud-title">RASHID ROVER</div>
+    <div class="hud-block" style="align-items:center">
+      <span class="hud-label">Battery</span>
+      <div class="battery-bar"><div class="battery-fill" id="battery-fill"></div></div>
+    </div>
+    <div class="hud-block" style="align-items:flex-end">
+      <span class="hud-label">Shields</span>
+      <div class="lives" id="lives-display"></div>
+    </div>
+  </div>
+
+  <canvas id="game-canvas"></canvas>
+
+  <div id="msg-overlay"><div id="msg-box"></div></div>
+
+  <div id="mobile-controls">
+    <button class="mob-btn" id="mob-left">◀</button>
+    <button class="mob-btn" id="mob-up">▲</button>
+    <button class="mob-btn" id="mob-down">▼</button>
+    <button class="mob-btn" id="mob-right">▶</button>
+  </div>
+</div>
+
+<!-- ══ GAME OVER SCREEN ══ -->
+<div id="over-screen" class="screen">
+  <div class="over-title" id="over-title" style="color:var(--red)">MISSION FAILED</div>
+  <p class="over-sub" id="over-sub">The Rashid Rover has lost contact with mission control.</p>
+  <div class="score-table">
+    <div class="score-row"><span class="lbl">Final Score</span><span class="val" id="final-score">0</span></div>
+    <div class="score-row"><span class="lbl">Distance</span><span class="val" id="final-dist">0m</span></div>
+    <div class="score-row"><span class="lbl">Data Collected</span><span class="val" id="final-data">0</span></div>
+    <div class="score-row"><span class="lbl">Best Score</span><span class="val" id="final-best" style="color:var(--gold-bright)">0</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn-start" id="retryBtn">RETRY MISSION</button>
+    <button class="btn-secondary" id="menuBtn">MAIN MENU</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  RASHID ROVER GAME ENGINE
+// ══════════════════════════════════════════════════════════
+
+const $ = id => document.getElementById(id);
+
+// ── State ──────────────────────────────────────────
+let gameState = 'start';
+let score = 0, distance = 0, dataCollected = 0;
+let lives = 3, battery = 100;
+let highScore = parseInt(localStorage.getItem('rashid_hs') || '0');
+let gameOver = false, paused = false;
+
+// ── Canvas Setup ───────────────────────────────────
+const gameCanvas = $('game-canvas');
+const gctx = gameCanvas.getContext('2d');
+let W, H;
+
+function resizeCanvas() {
+  W = gameCanvas.width = window.innerWidth;
+  H = gameCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', () => { resizeCanvas(); });
+resizeCanvas();
+
+// ── Start Screen Stars ─────────────────────────────
+const startCanvas = $('start-canvas');
+const sctx = startCanvas.getContext('2d');
+let stars = [];
+
+function initStars() {
+  startCanvas.width = window.innerWidth;
+  startCanvas.height = window.innerHeight;
+  stars = Array.from({length: 250}, () => ({
+    x: Math.random() * startCanvas.width,
+    y: Math.random() * startCanvas.height,
+    r: Math.random() * 1.8,
+    t: Math.random() * Math.PI * 2,
+    speed: 0.02 + Math.random() * 0.04
+  }));
+}
+window.addEventListener('resize', initStars);
+initStars();
+
+function animateStars() {
+  sctx.clearRect(0,0,startCanvas.width,startCanvas.height);
+  stars.forEach(s => {
+    s.t += s.speed;
+    const a = 0.3 + Math.sin(s.t) * 0.5;
+    sctx.beginPath();
+    sctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    sctx.fillStyle = `rgba(220,225,240,${a})`;
+    sctx.fill();
+  });
+  if (gameState === 'start') requestAnimationFrame(animateStars);
+}
+animateStars();
+$('hs-display').textContent = highScore;
+
+// ══════════════════════════════════════════════════════════
+//  GAME OBJECTS
+// ══════════════════════════════════════════════════════════
+
+// ── Ground ─────────────────────────────────────────
+const GROUND_LEVEL = 0.72; // fraction of H
+let groundOffset = 0;
+let groundPoints = [];
+
+function generateGround() {
+  groundPoints = [];
+  // Generate a long terrain
+  let x = 0, y = 0;
+  const segW = 60;
+  const totalSegs = 400;
+  for (let i = 0; i <= totalSegs; i++) {
+    groundPoints.push({ x: i * segW, y });
+    const bump = (Math.random() - 0.5) * 40;
+    y = Math.max(-80, Math.min(80, y + bump));
+  }
+}
+
+function getGroundYAt(worldX) {
+  const segW = 60;
+  const idx = Math.floor(worldX / segW);
+  if (idx < 0 || idx >= groundPoints.length - 1) return 0;
+  const t = (worldX % segW) / segW;
+  const y0 = groundPoints[idx].y;
+  const y1 = groundPoints[idx + 1].y;
+  return y0 + (y1 - y0) * t;
+}
+
+// ── Player (Rover) ─────────────────────────────────
+const ROVER = {
+  x: 0,          // world x
+  y: 0,          // world y (above ground)
+  vy: 0,
+  vx: 0,
+  w: 80, h: 50,
+  onGround: false,
+  shielded: false,
+  shieldTimer: 0,
+  invincible: 0,
+  wheelRot: 0,
+  panelAnim: 0,
+  blinkTimer: 0,
+};
+
+const GRAVITY = 0.45;
+const JUMP_V = -12;
+const MOVE_SPEED = 5;
+const MAX_VX = 8;
+
+// ── Camera ─────────────────────────────────────────
+let camX = 0;
+
+// ── Obstacles ──────────────────────────────────────
+let obstacles = [];
+let particles = [];
+let collectibles = [];
+let dustParticles = [];
+let craterDecos = [];
+let stars2 = [];
+
+const OBSTACLE_TYPES = [
+  { type:'rock',    w:30, h:25, color:'#5A6070', label:null },
+  { type:'rock',    w:50, h:35, color:'#4A5060', label:null },
+  { type:'crevice', w:55, h:40, color:'#1A2030', label:null },
+  { type:'boulder', w:45, h:55, color:'#6A7280', label:null },
+];
+
+const COLLECTIBLE_TYPES = [
+  { type:'data',    color:'#3A90E8', label:'DATA', points:50  },
+  { type:'solar',   color:'#D4A017', label:'☀',    points:30  },
+  { type:'sample',  color:'#3AE870', label:'SMPL', points:75  },
+  { type:'battery', color:'#FF9020', label:'⚡',    points:20  },
+];
+
+function spawnObstacle(worldX) {
+  const gY = getGroundYAt(worldX);
+  const template = OBSTACLE_TYPES[Math.floor(Math.random() * OBSTACLE_TYPES.length)];
+  obstacles.push({
+    ...template,
+    x: worldX,
+    gy: gY,
+    id: Math.random()
+  });
+}
+
+function spawnCollectible(worldX) {
+  const gY = getGroundYAt(worldX);
+  const template = COLLECTIBLE_TYPES[Math.floor(Math.random() * COLLECTIBLE_TYPES.length)];
+  collectibles.push({
+    ...template,
+    x: worldX,
+    gy: gY,
+    floatT: Math.random() * Math.PI * 2,
+    collected: false,
+    id: Math.random()
+  });
+}
+
+function spawnCrater(worldX) {
+  craterDecos.push({ x: worldX, r: 20 + Math.random() * 40 });
+}
+
+function initLevel() {
+  obstacles = [];
+  collectibles = [];
+  craterDecos = [];
+  particles = [];
+  dustParticles = [];
+
+  // Generate background stars
+  stars2 = Array.from({length: 200}, () => ({
+    x: Math.random() * 24000,
+    y: Math.random() * H * 0.65,
+    r: Math.random() * 1.5,
+    brightness: 0.3 + Math.random() * 0.7
+  }));
+
+  // Spawn objects
+  let lastObs = 500;
+  let lastCol = 300;
+  let lastCrater = 200;
+
+  for (let wx = 500; wx < 20000; wx += 1) {
+    if (wx - lastObs > 150 + Math.random() * 200) {
+      spawnObstacle(wx);
+      lastObs = wx;
+    }
+    if (wx - lastCol > 200 + Math.random() * 250) {
+      spawnCollectible(wx);
+      lastCol = wx;
+    }
+    if (wx - lastCrater > 120 + Math.random() * 300) {
+      spawnCrater(wx);
+      lastCrater = wx;
+    }
+  }
+
+  ROVER.x = 200;
+  ROVER.vy = 0;
+  ROVER.vx = 0;
+  ROVER.invincible = 0;
+  ROVER.shielded = false;
+  camX = 0;
+
+  score = 0;
+  distance = 0;
+  dataCollected = 0;
+  lives = 3;
+  battery = 100;
+  gameOver = false;
+}
+
+// ── Keys ───────────────────────────────────────────
+const keys = {};
+window.addEventListener('keydown', e => { keys[e.key] = true; e.preventDefault(); });
+window.addEventListener('keyup',   e => { keys[e.key] = false; });
+
+// Mobile controls
+function setupMobile() {
+  const map = { 'mob-left': 'ArrowLeft', 'mob-right': 'ArrowRight', 'mob-up': 'ArrowUp', 'mob-down': 'ArrowDown' };
+  Object.entries(map).forEach(([id, key]) => {
+    const btn = $(id);
+    btn.addEventListener('touchstart', e => { keys[key] = true; e.preventDefault(); }, {passive:false});
+    btn.addEventListener('touchend',   e => { keys[key] = false; e.preventDefault(); }, {passive:false});
+    btn.addEventListener('mousedown',  () => keys[key] = true);
+    btn.addEventListener('mouseup',    () => keys[key] = false);
+  });
+}
+setupMobile();
+
+// ══════════════════════════════════════════════════════════
+//  DRAWING
+// ══════════════════════════════════════════════════════════
+
+function drawBackground() {
+  // Space bg
+  const bg = gctx.createLinearGradient(0, 0, 0, H * GROUND_LEVEL);
+  bg.addColorStop(0, '#010510');
+  bg.addColorStop(0.6, '#050D20');
+  bg.addColorStop(1, '#0A1530');
+  gctx.fillStyle = bg;
+  gctx.fillRect(0, 0, W, H);
+
+  // Stars parallax
+  stars2.forEach(s => {
+    const sx = ((s.x - camX * 0.1) % (W * 3) + W * 3) % (W * 3) - W;
+    if (sx < 0 || sx > W) return;
+    gctx.beginPath();
+    gctx.arc(sx, s.y, s.r, 0, Math.PI * 2);
+    gctx.fillStyle = `rgba(210,220,245,${s.brightness})`;
+    gctx.fill();
+  });
+
+  // Distant mountains / planet silhouette
+  gctx.save();
+  gctx.globalAlpha = 0.15;
+  gctx.fillStyle = '#2A3A60';
+  gctx.beginPath();
+  gctx.moveTo(0, H * GROUND_LEVEL);
+  const mOff = camX * 0.05;
+  for (let x = 0; x <= W; x += 40) {
+    const my = H * GROUND_LEVEL - 60 - Math.sin((x + mOff) * 0.015) * 50 - Math.cos((x + mOff) * 0.03) * 30;
+    gctx.lineTo(x, my);
+  }
+  gctx.lineTo(W, H * GROUND_LEVEL);
+  gctx.closePath();
+  gctx.fill();
+  gctx.restore();
+}
+
+function drawGround() {
+  const groundY = H * GROUND_LEVEL;
+  const segW = 60;
+
+  // Ground fill
+  const gg = gctx.createLinearGradient(0, groundY - 100, 0, H);
+  gg.addColorStop(0, '#7A8292');
+  gg.addColorStop(0.1, '#5A6272');
+  gg.addColorStop(0.4, '#3A4252');
+  gg.addColorStop(1, '#1A2232');
+  gctx.fillStyle = gg;
+
+  gctx.beginPath();
+  gctx.moveTo(0, groundY);
+
+  // Draw terrain following ground points
+  const startIdx = Math.max(0, Math.floor(camX / segW) - 2);
+  const endIdx = Math.min(groundPoints.length - 1, startIdx + Math.ceil(W / segW) + 4);
+
+  for (let i = startIdx; i <= endIdx; i++) {
+    const sx = groundPoints[i].x - camX;
+    const sy = groundY + groundPoints[i].y;
+    gctx.lineTo(sx, sy);
+  }
+
+  gctx.lineTo(W, H);
+  gctx.lineTo(0, H);
+  gctx.closePath();
+  gctx.fill();
+
+  // Surface line
+  gctx.beginPath();
+  gctx.strokeStyle = 'rgba(180,190,210,0.4)';
+  gctx.lineWidth = 2;
+  for (let i = startIdx; i <= endIdx; i++) {
+    const sx = groundPoints[i].x - camX;
+    const sy = groundY + groundPoints[i].y;
+    if (i === startIdx) gctx.moveTo(sx, sy);
+    else gctx.lineTo(sx, sy);
+  }
+  gctx.stroke();
+
+  // Crater decorations
+  craterDecos.forEach(c => {
+    const sx = c.x - camX;
+    if (sx < -100 || sx > W + 100) return;
+    const cy = groundY + getGroundYAt(c.x);
+    gctx.save();
+    gctx.globalAlpha = 0.4;
+    gctx.beginPath();
+    gctx.ellipse(sx, cy, c.r, c.r * 0.25, 0, 0, Math.PI * 2);
+    gctx.fillStyle = '#1A2030';
+    gctx.fill();
+    gctx.strokeStyle = 'rgba(140,150,170,0.3)';
+    gctx.lineWidth = 1;
+    gctx.stroke();
+    gctx.restore();
+  });
+}
+
+function drawObstacles() {
+  const groundY = H * GROUND_LEVEL;
+  obstacles.forEach(o => {
+    const sx = o.x - camX;
+    if (sx < -100 || sx > W + 100) return;
+    const sy = groundY + o.gy;
+
+    if (o.type === 'crevice') {
+      // Crack in ground
+      gctx.save();
+      const cg = gctx.createLinearGradient(sx - o.w/2, sy, sx + o.w/2, sy + o.h);
+      cg.addColorStop(0, '#0A0F1A');
+      cg.addColorStop(1, '#000');
+      gctx.fillStyle = cg;
+      gctx.beginPath();
+      gctx.ellipse(sx, sy, o.w/2, o.h/4, 0, 0, Math.PI);
+      gctx.fill();
+      // Glow edges
+      gctx.strokeStyle = 'rgba(100,110,130,0.5)';
+      gctx.lineWidth = 1.5;
+      gctx.stroke();
+      gctx.restore();
+    } else {
+      // Rock / boulder
+      gctx.save();
+      const rg = gctx.createRadialGradient(sx - o.w*0.2, sy - o.h*0.6, 2, sx, sy - o.h/2, o.w/1.5);
+      rg.addColorStop(0, lighten(o.color, 40));
+      rg.addColorStop(0.5, o.color);
+      rg.addColorStop(1, darken(o.color, 30));
+
+      gctx.fillStyle = rg;
+      gctx.beginPath();
+      if (o.type === 'boulder') {
+        gctx.arc(sx, sy - o.h/2, o.w/2, 0, Math.PI*2);
+      } else {
+        // irregular rock
+        gctx.moveTo(sx - o.w/2, sy);
+        gctx.lineTo(sx - o.w*0.4, sy - o.h);
+        gctx.lineTo(sx - o.w*0.1, sy - o.h*1.1);
+        gctx.lineTo(sx + o.w*0.3, sy - o.h);
+        gctx.lineTo(sx + o.w/2, sy - o.h*0.3);
+        gctx.lineTo(sx + o.w*0.4, sy);
+        gctx.closePath();
+      }
+      gctx.fill();
+      gctx.strokeStyle = 'rgba(200,210,230,0.2)';
+      gctx.lineWidth = 1;
+      gctx.stroke();
+      gctx.restore();
+    }
+  });
+}
+
+function drawCollectibles(t) {
+  collectibles.forEach(c => {
+    if (c.collected) return;
+    const sx = c.x - camX;
+    if (sx < -60 || sx > W + 60) return;
+    const groundY = H * GROUND_LEVEL;
+    const sy = groundY + c.gy - 60 - Math.sin(c.floatT + t * 0.05) * 8;
+
+    c.floatT += 0.05;
+
+    gctx.save();
+    // Glow
+    gctx.shadowColor = c.color;
+    gctx.shadowBlur = 15;
+
+    // Hexagon shape
+    gctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+      const px = sx + Math.cos(a) * 18;
+      const py = sy + Math.sin(a) * 18;
+      i === 0 ? gctx.moveTo(px, py) : gctx.lineTo(px, py);
+    }
+    gctx.closePath();
+    gctx.fillStyle = c.color + '33';
+    gctx.fill();
+    gctx.strokeStyle = c.color;
+    gctx.lineWidth = 2;
+    gctx.stroke();
+
+    // Label
+    gctx.shadowBlur = 0;
+    gctx.fillStyle = c.color;
+    gctx.font = 'bold 9px Share Tech Mono';
+    gctx.textAlign = 'center';
+    gctx.textBaseline = 'middle';
+    gctx.fillText(c.label, sx, sy);
+
+    // Vertical line to ground
+    gctx.setLineDash([3, 5]);
+    gctx.strokeStyle = c.color + '55';
+    gctx.lineWidth = 1;
+    gctx.beginPath();
+    gctx.moveTo(sx, sy + 18);
+    gctx.lineTo(sx, groundY + c.gy);
+    gctx.stroke();
+    gctx.setLineDash([]);
+
+    gctx.restore();
+  });
+}
+
+function drawRover(t) {
+  const groundY = H * GROUND_LEVEL;
+  const rWorldY = groundY + getGroundYAt(ROVER.x) - ROVER.y;
+  const rx = ROVER.x - camX;
+  const ry = rWorldY;
+
+  // Dust trail
+  if (ROVER.onGround && (keys['ArrowLeft'] || keys['ArrowRight'])) {
+    for (let i = 0; i < 2; i++) {
+      dustParticles.push({
+        x: ROVER.x - (ROVER.vx > 0 ? 35 : -35),
+        y: rWorldY + 5,
+        vx: -ROVER.vx * 0.3 + (Math.random()-0.5)*2,
+        vy: -(Math.random()*2 + 1),
+        life: 1,
+        size: Math.random()*5 + 2
+      });
+    }
+  }
+
+  // Draw dust
+  dustParticles.forEach(d => {
+    const dx = d.x - camX;
+    gctx.beginPath();
+    gctx.arc(dx, d.y, d.size * d.life, 0, Math.PI*2);
+    gctx.fillStyle = `rgba(180,185,200,${d.life * 0.4})`;
+    gctx.fill();
+  });
+
+  gctx.save();
+  gctx.translate(rx, ry);
+
+  // Shield effect
+  if (ROVER.shielded || ROVER.invincible > 0) {
+    const sa = ROVER.shielded ? 0.5 + Math.sin(t*0.2)*0.2 : Math.sin(t*0.3)*0.3 + 0.2;
+    gctx.beginPath();
+    gctx.ellipse(0, -ROVER.h/2, ROVER.w * 0.75, ROVER.h * 0.85, 0, 0, Math.PI*2);
+    gctx.strokeStyle = `rgba(58,144,232,${sa})`;
+    gctx.lineWidth = 3;
+    gctx.stroke();
+    gctx.fillStyle = `rgba(58,144,232,${sa*0.15})`;
+    gctx.fill();
+  }
+
+  // Shadow
+  gctx.beginPath();
+  gctx.ellipse(0, 3, ROVER.w*0.5, 7, 0, 0, Math.PI*2);
+  gctx.fillStyle = 'rgba(0,0,0,0.35)';
+  gctx.fill();
+
+  // ── Solar Panels ──
+  ROVER.panelAnim = Math.sin(t * 0.02) * 0.05;
+  gctx.save();
+  gctx.rotate(ROVER.panelAnim);
+
+  const panelGrad = gctx.createLinearGradient(-65, -10, -20, 10);
+  panelGrad.addColorStop(0, '#0A2A60');
+  panelGrad.addColorStop(0.5, '#1850B0');
+  panelGrad.addColorStop(1, '#0A2A60');
+  gctx.fillStyle = panelGrad;
+  gctx.fillRect(-65, -ROVER.h * 0.65 - 8, 42, 16);
+
+  const panelGrad2 = gctx.createLinearGradient(22, -10, 65, 10);
+  panelGrad2.addColorStop(0, '#0A2A60');
+  panelGrad2.addColorStop(0.5, '#1850B0');
+  panelGrad2.addColorStop(1, '#0A2A60');
+  gctx.fillStyle = panelGrad2;
+  gctx.fillRect(22, -ROVER.h * 0.65 - 8, 42, 16);
+
+  // Grid lines
+  gctx.strokeStyle = 'rgba(80,130,220,0.5)';
+  gctx.lineWidth = 0.8;
+  for (let i = 1; i < 4; i++) {
+    gctx.beginPath(); gctx.moveTo(-65 + i*10, -ROVER.h*0.65-8); gctx.lineTo(-65+i*10, -ROVER.h*0.65+8); gctx.stroke();
+    gctx.beginPath(); gctx.moveTo(22 + i*10, -ROVER.h*0.65-8); gctx.lineTo(22+i*10, -ROVER.h*0.65+8); gctx.stroke();
+  }
+  gctx.beginPath(); gctx.moveTo(-65, -ROVER.h*0.65); gctx.lineTo(-22, -ROVER.h*0.65); gctx.stroke();
+  gctx.beginPath(); gctx.moveTo(22, -ROVER.h*0.65); gctx.lineTo(65, -ROVER.h*0.65); gctx.stroke();
+
+  gctx.restore();
+
+  // ── Main body ──
+  const bodyGrad = gctx.createLinearGradient(-ROVER.w*0.45, -ROVER.h*0.9, ROVER.w*0.45, -ROVER.h*0.1);
+  bodyGrad.addColorStop(0, '#C8D0DC');
+  bodyGrad.addColorStop(0.4, '#98A0B0');
+  bodyGrad.addColorStop(1, '#606878');
+  gctx.fillStyle = bodyGrad;
+  gctx.beginPath();
+  gctx.roundRect(-ROVER.w*0.45, -ROVER.h*0.95, ROVER.w*0.9, ROVER.h*0.75, 6);
+  gctx.fill();
+  gctx.strokeStyle = 'rgba(200,210,230,0.3)';
+  gctx.lineWidth = 1.5;
+  gctx.stroke();
+
+  // UAE flag strip
+  gctx.fillStyle = '#009736'; gctx.fillRect(-28, -ROVER.h*0.92, 56, 6);
+  gctx.fillStyle = '#FFF';    gctx.fillRect(-28, -ROVER.h*0.92+6, 56, 6);
+  gctx.fillStyle = '#000';    gctx.fillRect(-28, -ROVER.h*0.92+12, 56, 6);
+  gctx.fillStyle = '#EF3340'; gctx.fillRect(-28, -ROVER.h*0.92, 12, 18);
+
+  // Body vents
+  for (let i = 0; i < 4; i++) {
+    gctx.fillStyle = 'rgba(40,50,70,0.7)';
+    gctx.fillRect(-18 + i*10, -ROVER.h*0.7, 7, 10);
+  }
+
+  // ── Camera mast ──
+  gctx.fillStyle = '#708090';
+  gctx.fillRect(-3, -ROVER.h*0.95 - 28, 6, 28);
+  gctx.beginPath();
+  gctx.arc(0, -ROVER.h*0.95 - 34, 11, 0, Math.PI*2);
+  gctx.fillStyle = '#404858';
+  gctx.fill();
+  // Camera lens with blink
+  const lensGlow = battery > 0 ? `rgba(80,160,255,${0.5 + Math.sin(t*0.1)*0.4})` : 'rgba(80,80,80,0.5)';
+  gctx.beginPath();
+  gctx.arc(0, -ROVER.h*0.95 - 34, 5, 0, Math.PI*2);
+  gctx.fillStyle = lensGlow;
+  gctx.fill();
+
+  // ── Wheels ──
+  const wheelY = -6;
+  const wheelPositions = [-34, -12, 12, 34];
+  wheelPositions.forEach(wx => {
+    ROVER.wheelRot += (ROVER.vx !== 0 ? 0.08 : 0);
+    gctx.save();
+    gctx.translate(wx, wheelY);
+    gctx.rotate(ROVER.vx > 0 ? ROVER.wheelRot : -ROVER.wheelRot);
+
+    const wg = gctx.createRadialGradient(0, 0, 2, 0, 0, 13);
+    wg.addColorStop(0, '#607080');
+    wg.addColorStop(0.7, '#303848');
+    wg.addColorStop(1, '#202830');
+    gctx.beginPath();
+    gctx.arc(0, 0, 13, 0, Math.PI*2);
+    gctx.fillStyle = wg;
+    gctx.fill();
+    gctx.strokeStyle = '#7888A0';
+    gctx.lineWidth = 2;
+    gctx.stroke();
+
+    // Spokes
+    for (let s = 0; s < 5; s++) {
+      const a = (s/5) * Math.PI*2;
+      gctx.beginPath();
+      gctx.moveTo(0,0);
+      gctx.lineTo(Math.cos(a)*13, Math.sin(a)*13);
+      gctx.strokeStyle = '#7888A0';
+      gctx.lineWidth = 1.5;
+      gctx.stroke();
+    }
+
+    gctx.restore();
+  });
+
+  // Axle rods
+  gctx.strokeStyle = '#608090';
+  gctx.lineWidth = 3;
+  gctx.beginPath(); gctx.moveTo(-34, wheelY); gctx.lineTo(-12, wheelY); gctx.stroke();
+  gctx.beginPath(); gctx.moveTo(12, wheelY); gctx.lineTo(34, wheelY); gctx.stroke();
+
+  // ── Langmuir probe ──
+  gctx.save();
+  gctx.translate(-ROVER.w*0.4, -ROVER.h*0.6);
+  gctx.rotate(-0.5 + Math.sin(t*0.015)*0.06);
+  gctx.strokeStyle = '#8090A0';
+  gctx.lineWidth = 2;
+  gctx.beginPath(); gctx.moveTo(0,0); gctx.lineTo(-20,-12); gctx.stroke();
+  gctx.beginPath();
+  gctx.arc(-20,-12, 4, 0, Math.PI*2);
+  gctx.fillStyle = '#D4A017';
+  gctx.fill();
+  gctx.restore();
+
+  gctx.restore();
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    gctx.beginPath();
+    gctx.arc(p.x - camX, p.y, p.size * p.life, 0, Math.PI*2);
+    gctx.fillStyle = p.color.replace(')', `,${p.life})`).replace('rgb', 'rgba');
+    gctx.fill();
+  });
+}
+
+function drawHUD() {
+  $('score-display').textContent = score;
+  $('dist-display').textContent = Math.floor(distance / 10) + 'm';
+  const bf = $('battery-fill');
+  bf.style.width = battery + '%';
+  bf.style.background = battery > 50 ? '#3AE870' : battery > 25 ? '#D4A017' : '#E8402A';
+
+  const ld = $('lives-display');
+  ld.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const d = document.createElement('div');
+    d.className = 'life-icon' + (i >= lives ? ' lost' : '');
+    ld.appendChild(d);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  PHYSICS & LOGIC
+// ══════════════════════════════════════════════════════════
+
+function updateRover() {
+  const groundY = H * GROUND_LEVEL;
+  const gY = getGroundYAt(ROVER.x);
+  const surfaceY = gY; // y offset from ground level
+
+  // Horizontal
+  if (keys['ArrowRight']) {
+    ROVER.vx = Math.min(ROVER.vx + 0.6, MAX_VX);
+  } else if (keys['ArrowLeft']) {
+    ROVER.vx = Math.max(ROVER.vx - 0.6, -MAX_VX * 0.6);
+  } else {
+    ROVER.vx *= 0.85;
+  }
+
+  ROVER.x += ROVER.vx;
+  ROVER.x = Math.max(50, ROVER.x);
+
+  // Vertical / gravity
+  ROVER.vy += GRAVITY;
+  ROVER.y -= ROVER.vy; // y = height above surface
+
+  // Ground collision
+  const minY = 0; // ground
+  if (ROVER.y <= minY) {
+    ROVER.y = minY;
+    ROVER.vy = 0;
+    ROVER.onGround = true;
+  } else {
+    ROVER.onGround = false;
+  }
+
+  // Jump
+  if ((keys['ArrowUp'] || keys[' ']) && ROVER.onGround) {
+    ROVER.vy = JUMP_V;
+    ROVER.onGround = false;
+    spawnJumpDust();
+  }
+
+  // Shield
+  ROVER.shielded = keys['ArrowDown'] && ROVER.onGround;
+  ROVER.shieldTimer = ROVER.shielded ? ROVER.shieldTimer + 1 : 0;
+
+  // Battery drain
+  if (ROVER.vx !== 0 || !ROVER.onGround) {
+    battery -= 0.015;
+  }
+  battery = Math.max(0, Math.min(100, battery));
+
+  // Camera follow
+  camX = Math.max(0, ROVER.x - W * 0.3);
+
+  // Distance score
+  distance = Math.max(distance, ROVER.x - 200);
+  score = Math.floor(distance / 10) * 10 + dataCollected * 10;
+
+  // Invincibility countdown
+  if (ROVER.invincible > 0) ROVER.invincible--;
+}
+
+function spawnJumpDust() {
+  for (let i = 0; i < 8; i++) {
+    const a = Math.PI + (Math.random() - 0.5) * Math.PI;
+    const spd = Math.random() * 3 + 1;
+    dustParticles.push({
+      x: ROVER.x,
+      y: H * GROUND_LEVEL + getGroundYAt(ROVER.x),
+      vx: Math.cos(a) * spd,
+      vy: Math.sin(a) * spd - 1,
+      life: 1,
+      size: Math.random()*4 + 2
+    });
+  }
+}
+
+function updateParticles() {
+  particles = particles.filter(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.1;
+    p.life -= 0.025;
+    return p.life > 0;
+  });
+
+  dustParticles = dustParticles.filter(d => {
+    d.x += d.vx;
+    d.y += d.vy;
+    d.vy += 0.05;
+    d.life -= 0.04;
+    return d.life > 0;
+  });
+}
+
+function spawnHitParticles(x, y, color) {
+  for (let i = 0; i < 12; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const spd = Math.random() * 5 + 2;
+    particles.push({
+      x, y,
+      vx: Math.cos(a) * spd,
+      vy: Math.sin(a) * spd - 3,
+      life: 1,
+      size: Math.random() * 5 + 2,
+      color
+    });
+  }
+}
+
+function spawnCollectParticles(x, y, color) {
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    particles.push({
+      x, y: y - 60,
+      vx: Math.cos(a) * 3,
+      vy: Math.sin(a) * 3 - 2,
+      life: 1,
+      size: 4,
+      color
+    });
+  }
+}
+
+function checkCollisions() {
+  if (ROVER.invincible > 0) return;
+  const groundY = H * GROUND_LEVEL;
+  const rWorldY = groundY + getGroundYAt(ROVER.x) - ROVER.y;
+  const rx = ROVER.x;
+
+  // Obstacles
+  obstacles.forEach(o => {
+    const oWorldY = groundY + o.gy;
+
+    let hit = false;
+    if (o.type === 'crevice') {
+      // Crevice: falls in if rover is directly above and not jumping high enough
+      const dist = Math.abs(rx - o.x);
+      if (dist < o.w * 0.4 && ROVER.y < 5 && !ROVER.shielded) hit = true;
+    } else {
+      // Rock / boulder
+      const dist = Math.abs(rx - o.x);
+      const vertDist = Math.abs(rWorldY - (oWorldY - o.h/2));
+      if (dist < (ROVER.w * 0.4 + o.w * 0.4) && vertDist < ROVER.h * 0.5 + o.h * 0.5) {
+        if (!ROVER.shielded) hit = true;
+        else {
+          // Shield destroys rock
+          ROVER.vx = -ROVER.vx * 0.5;
+          spawnHitParticles(o.x - camX, oWorldY - o.h/2, 'rgb(200,200,200)');
+          obstacles = obstacles.filter(ob => ob.id !== o.id);
+        }
+      }
+    }
+
+    if (hit) {
+      lives--;
+      ROVER.invincible = 120;
+      ROVER.vy = JUMP_V * 0.7;
+      ROVER.vx = -ROVER.vx;
+      spawnHitParticles(rx - camX, rWorldY - ROVER.h/2, 'rgb(232,64,42)');
+      showMessage(lives > 0 ? '⚠ SHIELD DAMAGE!' : '✕ ROVER LOST');
+      if (lives <= 0) triggerGameOver();
+    }
+  });
+
+  // Collectibles
+  collectibles.forEach(c => {
+    if (c.collected) return;
+    const dist = Math.hypot(rx - c.x, (rWorldY - 40) - (groundY + c.gy - 60));
+    if (dist < 30) {
+      c.collected = true;
+      dataCollected++;
+      if (c.type === 'battery') battery = Math.min(100, battery + 25);
+      score += c.points;
+      spawnCollectParticles(c.x - camX, groundY + c.gy, c.color);
+      showMessage(`+${c.points} ${c.label === '⚡' ? 'BATTERY RECHARGED' : c.type.toUpperCase() + ' COLLECTED'}`);
+    }
+  });
+
+  // Battery dead
+  if (battery <= 0) {
+    showMessage('⚡ BATTERY DEPLETED');
+    setTimeout(triggerGameOver, 1500);
+    battery = 0.1;
+  }
+
+  // Win condition
+  if (ROVER.x > 19500) {
+    triggerWin();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  MESSAGES
+// ══════════════════════════════════════════════════════════
+let msgTimer = null;
+function showMessage(text) {
+  const box = $('msg-box');
+  box.textContent = text;
+  box.classList.add('show');
+  clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => box.classList.remove('show'), 1800);
+}
+
+// ══════════════════════════════════════════════════════════
+//  GAME LOOP
+// ══════════════════════════════════════════════════════════
+let tick = 0;
+let raf = null;
+
+function gameLoop() {
+  tick++;
+  gctx.clearRect(0, 0, W, H);
+
+  drawBackground();
+  drawGround();
+  drawObstacles();
+  drawCollectibles(tick);
+  drawParticles();
+  drawRover(tick);
+  drawHUD();
+
+  updateRover();
+  updateParticles();
+  checkCollisions();
+
+  // Difficulty: speed up game scroll over time
+  if (tick % 600 === 0 && MAX_VX < 15) {
+    // ROVER.maxSpeed increases naturally
+  }
+
+  if (!gameOver) raf = requestAnimationFrame(gameLoop);
+}
+
+// ══════════════════════════════════════════════════════════
+//  SCREENS
+// ══════════════════════════════════════════════════════════
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+function startGame() {
+  gameState = 'playing';
+  generateGround();
+  initLevel();
+  showScreen('game-screen');
+  showMessage('MISSION START — RASHID ROVER DEPLOYED');
+  if (raf) cancelAnimationFrame(raf);
+  gameOver = false;
+  gameLoop();
+}
+
+function triggerGameOver() {
+  if (gameOver) return;
+  gameOver = true;
+  cancelAnimationFrame(raf);
+
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('rashid_hs', highScore);
+  }
+
+  setTimeout(() => {
+    $('over-title').textContent = 'MISSION FAILED';
+    $('over-title').style.color = 'var(--red)';
+    $('over-sub').textContent = 'The Rashid Rover has lost contact with mission control. Mission data is being recovered.';
+    $('final-score').textContent = score;
+    $('final-dist').textContent = Math.floor(distance/10) + 'm';
+    $('final-data').textContent = dataCollected;
+    $('final-best').textContent = highScore;
+    showScreen('over-screen');
+  }, 800);
+}
+
+function triggerWin() {
+  if (gameOver) return;
+  gameOver = true;
+  cancelAnimationFrame(raf);
+
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('rashid_hs', highScore);
+  }
+
+  $('over-title').textContent = 'MISSION COMPLETE!';
+  $('over-title').style.color = 'var(--gold-bright)';
+  $('over-sub').textContent = 'Rashid Rover has successfully traversed the lunar surface. All mission objectives achieved. UAE makes history!';
+  $('final-score').textContent = score;
+  $('final-dist').textContent = Math.floor(distance/10) + 'm';
+  $('final-data').textContent = dataCollected;
+  $('final-best').textContent = highScore;
+  showScreen('over-screen');
+}
+
+// ── Button listeners ───────────────────────────────
+$('startBtn').addEventListener('click', startGame);
+$('retryBtn').addEventListener('click', startGame);
+$('menuBtn').addEventListener('click', () => {
+  gameState = 'start';
+  if (raf) cancelAnimationFrame(raf);
+  $('hs-display').textContent = highScore;
+  showScreen('start-screen');
+  animateStars();
+});
+
+// Spacebar on start screen
+window.addEventListener('keydown', e => {
+  if (gameState === 'start' && e.key === 'Enter') startGame();
+});
+
+// ── Utility ───────────────────────────────────────
+function lighten(hex, amount) {
+  const num = parseInt(hex.replace('#',''), 16);
+  const r = Math.min(255, (num >> 16) + amount);
+  const g = Math.min(255, ((num >> 8) & 0xFF) + amount);
+  const b = Math.min(255, (num & 0xFF) + amount);
+  return `rgb(${r},${g},${b})`;
+}
+
+function darken(hex, amount) {
+  const num = parseInt(hex.replace('#',''), 16);
+  const r = Math.max(0, (num >> 16) - amount);
+  const g = Math.max(0, ((num >> 8) & 0xFF) - amount);
+  const b = Math.max(0, (num & 0xFF) - amount);
+  return `rgb(${r},${g},${b})`;
+}
+</script>
+</body>
+</html>
